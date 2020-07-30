@@ -20,7 +20,7 @@ const int serverPort = 3000;
 String mac = WiFi.macAddress();
 String pwd = "123456";
 
-void handler(const char *message, size_t length)
+void setState(const char *message, size_t length)
 {
   DynamicJsonDocument json(1024);
   deserializeJson(json, message);
@@ -33,6 +33,44 @@ void handler(const char *message, size_t length)
   peOUT.digitalWrite(1, !json["5"]); // RL6
   peOUT.digitalWrite(2, !json["6"]); // RL7
   peOUT.digitalWrite(7, !json["7"]); // LED STATUS
+}
+
+void sendState(void)
+{
+  DynamicJsonDocument json(1024);
+
+  json["mac"] = mac;
+
+  JsonObject inputs = json.createNestedObject("inputs");
+
+  inputs["1"] = !peIN.digitalRead(0);
+  inputs["2"] = !peIN.digitalRead(1);
+  inputs["3"] = !peIN.digitalRead(2);
+  inputs["4"] = !peIN.digitalRead(3);
+  inputs["5"] = !peIN.digitalRead(4);
+  inputs["6"] = !peIN.digitalRead(5);
+  inputs["7"] = !peIN.digitalRead(6);
+  inputs["8"] = !peIN.digitalRead(7);
+
+  JsonObject outputs = json.createNestedObject("outputs");
+
+  outputs["1"] = !peOUT.digitalRead(3);
+  outputs["2"] = !peOUT.digitalRead(6);
+  outputs["3"] = !peOUT.digitalRead(5);
+  outputs["4"] = !peOUT.digitalRead(4);
+  outputs["5"] = !peOUT.digitalRead(0);
+  outputs["6"] = !peOUT.digitalRead(1);
+  outputs["7"] = !peOUT.digitalRead(2);
+  outputs["8"] = !peOUT.digitalRead(7);
+
+  char serializedJson[500];
+
+  serializeJson(json, serializedJson);
+  socket.emit("d>s.state", serializedJson);
+}
+void getState(const char *message, size_t length)
+{
+  sendState();
 }
 
 void setup(void)
@@ -61,7 +99,8 @@ void setup(void)
   }
 
   socket.begin(server, serverPort);
-  socket.on("server->device", handler);
+  socket.on("s->d.sync", getState);
+  socket.on("s->d.state", setState);
 }
 
 void loop(void)
@@ -69,36 +108,5 @@ void loop(void)
   socket.loop();
 
   if (!digitalRead(interruptPCI_in))
-  {
-    DynamicJsonDocument json(1024);
-
-    json["mac"] = mac;
-
-    JsonObject inputs = json.createNestedObject("inputs");
-
-    inputs["1"] = !peIN.digitalRead(0);
-    inputs["2"] = !peIN.digitalRead(1);
-    inputs["3"] = !peIN.digitalRead(2);
-    inputs["4"] = !peIN.digitalRead(3);
-    inputs["5"] = !peIN.digitalRead(4);
-    inputs["6"] = !peIN.digitalRead(5);
-    inputs["7"] = !peIN.digitalRead(6);
-    inputs["8"] = !peIN.digitalRead(7);
-
-    JsonObject outputs = json.createNestedObject("outputs");
-
-    outputs["1"] = !peOUT.digitalRead(3);
-    outputs["2"] = !peOUT.digitalRead(6);
-    outputs["3"] = !peOUT.digitalRead(5);
-    outputs["4"] = !peOUT.digitalRead(4);
-    outputs["5"] = !peOUT.digitalRead(0);
-    outputs["6"] = !peOUT.digitalRead(1);
-    outputs["7"] = !peOUT.digitalRead(2);
-    outputs["8"] = !peOUT.digitalRead(7);
-
-    char serializedJson[500];
-
-    serializeJson(json, serializedJson);
-    socket.emit("device->server", serializedJson);
-  }
+    sendState();
 }
