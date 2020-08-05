@@ -4,21 +4,25 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
+#include <EEPROM.h>
+#include <ESPAsyncWebServer.h>
+
+#include <utils.h>
+#include <formPage.h>
 
 PortExpander_I2C peOUT(0x27);
 PortExpander_I2C peIN(0x26);
 SocketIoClient socket;
+AsyncWebServer server(80);
 
 int interruptPCI_in = 5;
 
-const char *ssid = "Vargaski";
-const char *password = "12345678";
-
-const char *server = "192.168.0.104";
-const int serverPort = 3000;
-
 String mac = WiFi.macAddress();
 String pwd = "123456";
+
+IPAddress local_IP(192, 168, 0, 1);
+IPAddress gateway(192, 168, 0, 1);
+IPAddress subnet(255, 255, 255, 0);
 
 void setState(const char *message, size_t length)
 {
@@ -75,6 +79,7 @@ void getState(const char *message, size_t length)
 
 void setup(void)
 {
+  EEPROM.begin(200);
   Wire.begin(0, 2);
   peOUT.init();
   peIN.init();
@@ -88,19 +93,40 @@ void setup(void)
   Serial.begin(115200);
   Serial.println("\r\n\r\nBooting...");
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  String ssid = EEPROMReadString(20, 40);
+  String password = EEPROMReadString(40, 60);
+  String serverAddress = EEPROMReadString(60, 80);
+  String serverPort = EEPROMReadString(80, 86);
 
-  while (WiFi.waitForConnectResult() != WL_CONNECTED)
-  {
-    Serial.println("Connection Failed! Rebooting...");
-    delay(5000);
-    ESP.restart();
-  }
+  //WiFi.mode(WIFI_STA);
+  //WiFi.begin(ssid, password);
 
-  socket.begin(server, serverPort);
+  // while (WiFi.waitForConnectResult() != WL_CONNECTED)
+  // {
+  //   Serial.println("Connection Failed! Rebooting...");
+  //   delay(5000);
+  //   ESP.restart();
+  // }
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send_P(200, "text/html", index_html);
+  });
+
+  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request) {
+    EEPROMWriteString(request->getParam(0)->value(), 20, 40);
+    EEPROMWriteString(request->getParam(1)->value(), 40, 60);
+    EEPROMWriteString(request->getParam(2)->value(), 60, 80);
+    EEPROMWriteString(request->getParam(3)->value(), 80, 86);
+    request->send(200, "Saved successfully!");
+  });
+
+  server.begin();
+  WiFi.softAPConfig(local_IP, gateway, subnet);
+  WiFi.softAP("ESPsoftAP @Technow");
+
   socket.on("s->d.sync", getState);
   socket.on("s->d.state", setState);
+  socket.begin(serverAddress, atoi(serverPort));
 }
 
 void loop(void)
