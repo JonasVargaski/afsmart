@@ -24,7 +24,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         <input id="server" type="text">
       </label>
       <label>Port
-        <input id="port" type="text">
+        <input type="number" id="port" type="text">
       </label>
     </div>
 
