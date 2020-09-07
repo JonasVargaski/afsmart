@@ -1,0 +1,15 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/tgmarinho/gobarber-api-gostack11",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon ./src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.4",
+    "socket.io": "^2.3.0"
+  }
+}

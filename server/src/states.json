@@ -1,0 +1,24 @@
+{
+  "84F3EBB4C63B": {
+    "inputs": {
+      "Di1": false,
+      "Di2": false,
+      "Di3": false,
+      "Di4": false,
+      "Di5": false,
+      "Di6": false,
+      "Di7": false,
+      "Di8": false
+    },
+    "outputs": {
+      "Do1": true,
+      "Do2": false,
+      "Do3": true,
+      "Do4": false,
+      "Do5": false,
+      "Do6": false,
+      "Do7": false,
+      "Do8": false
+    }
+  }
+}
