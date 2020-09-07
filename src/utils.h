@@ -1,5 +1,5 @@
 #include <EEPROM.h>
-#include <String.h>
+#include <string.h>
 
 bool EEPROMWriteString(String str, unsigned int posS, unsigned int posE)
 {
